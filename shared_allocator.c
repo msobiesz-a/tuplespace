@@ -13,6 +13,8 @@ void create_memory_segment(size_t initialCapacityInBytes)
     int shmId = create_shared_memory(initialCapacityInBytes + sizeof(segment_descriptor_t));
     segment_descriptor_t *shmPtr = map_shared_memory(shmId);
     memPtr = shmPtr;
+    shmPtr->remapped = false;
+    shmPtr->newShmId = -1;
     shmPtr->shmId = shmId;
     shmPtr->bytes = initialCapacityInBytes;
     shmPtr->blockCount = 1;
@@ -28,13 +30,23 @@ void create_memory_segment(size_t initialCapacityInBytes)
 
 int get_memory_segment_id()
 {
+    remap_memory_segment_if_needed();
     return memPtr ? memPtr->shmId : -1;
+}
+
+void remap_memory_segment_if_needed()
+{
+    if(memPtr->remapped)
+    {
+        int newShmId = memPtr->newShmId;
+        unmap_memory_segment();
+        map_memory_segment(newShmId);
+    }
 }
 
 void map_memory_segment(int shmId)
 {
-    segment_descriptor_t *ptr = map_shared_memory(shmId);
-    memPtr = ptr;
+    memPtr = map_shared_memory(shmId);;
 }
 
 void unmap_memory_segment()
@@ -70,12 +82,14 @@ void resize_memory_segment()
     newBlock->nextBlock = 0;
     newBlock->prevBlock = oldMemPtr->lastBlock;
     newBlock->blockSize = memPtr->bytes - oldMemPtr->bytes - sizeof(*newBlock);
+    oldMemPtr->remapped = true;
+    oldMemPtr->newShmId = memPtr->shmId;
     destroy_memory_segment(&oldMemPtr);
 }
 
 size_t balloc(size_t bytes)
 {
-    segment_descriptor_t *s = memPtr;
+    remap_memory_segment_if_needed();
     if(!bytes)
         return 0;
     size_t blockPtr = find_first_fit_free_block(bytes);
@@ -89,8 +103,8 @@ size_t balloc(size_t bytes)
     size_t unusedBytes = 0;
     if(block->blockSize > bytes + sizeof(*block))
          unusedBytes = block->blockSize - bytes - sizeof(*block);
-    block->blockSize = bytes;
     if(unusedBytes > sizeof(*block)) {
+        block->blockSize = bytes;
         size_t oldNextPtr = block->nextBlock;
         block->nextBlock = blockPtr + sizeof(*block) + block->blockSize;
         block_descriptor_t *next = get_block_from_pointer(block->nextBlock);
@@ -105,6 +119,7 @@ size_t balloc(size_t bytes)
             memPtr->lastBlock = block->nextBlock;
         ++(memPtr->blockCount);
     }
+    block->blockSize = bytes + unusedBytes;
     ++(memPtr->usedBlockCount);
     return blockPtr;
 }
@@ -133,27 +148,31 @@ void *dereference_pointer(size_t ptr)
 {
     if(is_pointer_null(ptr))
         return NULL;
+    remap_memory_segment_if_needed();
     return (void *) ((char *) memPtr + ptr + sizeof(block_descriptor_t));
 }
 
 bool is_pointer_null(size_t ptr)
 {
+    remap_memory_segment_if_needed();
     return (ptr < memPtr->firstBlock);
 }
 
 void set_head(size_t ptr)
 {
+    remap_memory_segment_if_needed();
     memPtr->head = ptr;
 }
 
 size_t get_head()
 {
+    remap_memory_segment_if_needed();
     return memPtr->head;
 }
 
 void bfree(size_t ptr)
 {
-    segment_descriptor_t *s = memPtr;
+    remap_memory_segment_if_needed();
     if(is_pointer_null(ptr))
         return;
     block_descriptor_t *block = get_block_from_pointer(ptr);

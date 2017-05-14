@@ -16,6 +16,8 @@ typedef struct block_descriptor_t
 typedef struct segment_descriptor_t
 {
     int shmId;
+    bool remapped;
+    int newShmId;
     size_t bytes;
     size_t blockCount;
     size_t usedBlockCount;
@@ -26,6 +28,7 @@ typedef struct segment_descriptor_t
 
 void create_memory_segment(size_t initialCapacityInBytes);
 int get_memory_segment_id();
+void remap_memory_segment_if_needed();
 void map_memory_segment(int shmId);
 void unmap_memory_segment();
 void destroy_memory_segment(segment_descriptor_t **shmPtr);
