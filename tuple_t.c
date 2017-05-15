@@ -188,9 +188,11 @@ bool are_elements_equal(tuple_element_t *tupleElement, tuple_element_t *patternE
     switch(tupleElement->data.valueType)
     {
         case INTEGER:
-            return dereference_pointer(tupleElement->data.value) == dereference_pointer(patternElement->data.value);
+            return  *((int *) dereference_pointer(tupleElement->data.value))
+                    == *((int *) dereference_pointer(patternElement->data.value));
         case STRING:
-            return strcmp(dereference_pointer(tupleElement->data.value), dereference_pointer(patternElement->data.value)) == 0;
+            return strcmp(dereference_pointer(tupleElement->data.value),
+                          dereference_pointer(patternElement->data.value)) == 0;
         default:
             assert(false);
     }
@@ -201,9 +203,11 @@ bool is_element_less_than(tuple_element_t *tupleElement, tuple_element_t *patter
     switch(tupleElement->data.valueType)
     {
         case INTEGER:
-            return dereference_pointer(tupleElement->data.value) < dereference_pointer(patternElement->data.value);
+            return  *((int *) dereference_pointer(tupleElement->data.value))
+                    < *((int *) dereference_pointer(patternElement->data.value));
         case STRING:
-            return strcmp(dereference_pointer(tupleElement->data.value), dereference_pointer(patternElement->data.value)) < 0;
+            return strcmp(dereference_pointer(tupleElement->data.value),
+                          dereference_pointer(patternElement->data.value)) < 0;
         default:
             assert(false);
     }
@@ -214,9 +218,11 @@ bool is_element_less_equal(tuple_element_t *tupleElement, tuple_element_t *patte
     switch(tupleElement->data.valueType)
     {
         case INTEGER:
-            return dereference_pointer(tupleElement->data.value) <= dereference_pointer(patternElement->data.value);
+            return  *((int *) dereference_pointer(tupleElement->data.value))
+                    <= *((int *) dereference_pointer(patternElement->data.value));
         case STRING:
-            return strcmp(dereference_pointer(tupleElement->data.value), dereference_pointer(patternElement->data.value)) <= 0;
+            return strcmp(dereference_pointer(tupleElement->data.value),
+                          dereference_pointer(patternElement->data.value)) <= 0;
         default:
             assert(false);
     }
@@ -227,9 +233,11 @@ bool is_element_greater_than(tuple_element_t *tupleElement, tuple_element_t *pat
     switch(tupleElement->data.valueType)
     {
         case INTEGER:
-            return dereference_pointer(tupleElement->data.value) > dereference_pointer(patternElement->data.value);
+            return  *((int *) dereference_pointer(tupleElement->data.value))
+                    > *((int *) dereference_pointer(patternElement->data.value));
         case STRING:
-            return strcmp(dereference_pointer(tupleElement->data.value), dereference_pointer(patternElement->data.value)) > 0;
+            return strcmp(dereference_pointer(tupleElement->data.value),
+                          dereference_pointer(patternElement->data.value)) > 0;
         default:
             assert(false);
     }
@@ -240,9 +248,11 @@ bool is_element_greater_equal(tuple_element_t *tupleElement, tuple_element_t *pa
     switch(tupleElement->data.valueType)
     {
         case INTEGER:
-            return dereference_pointer(tupleElement->data.value) >= dereference_pointer(patternElement->data.value);
+            return  *((int *) dereference_pointer(tupleElement->data.value))
+                    >= *((int *) dereference_pointer(patternElement->data.value));
         case STRING:
-            return strcmp(dereference_pointer(tupleElement->data.value), dereference_pointer(patternElement->data.value)) >= 0;
+            return strcmp(dereference_pointer(tupleElement->data.value),
+                          dereference_pointer(patternElement->data.value)) >= 0;
         default:
             assert(false);
     }
