@@ -2,6 +2,7 @@
 
 #include "list_t.h"
 #include "shared_allocator.h"
+#include "tuple_t.h"
 
 
 void initialize_list(size_t listPtr)
@@ -21,7 +22,9 @@ void destroy_list(size_t listPtr)
     size_t dataPtr = 0;
     while(list->size > 0)
         if(remove_from_list_after(listPtr, 0, &dataPtr) == 0)
-            bfree(dataPtr);
+            destroy_tuple(dataPtr);
+    // heap corruption protection, see corresponding note
+    // bfree(listPtr);
 }
 
 int insert_into_list_after(size_t listPtr, size_t elementPtr, const size_t dataPtr)

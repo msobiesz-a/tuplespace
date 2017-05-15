@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef size_t shm_ptr_t;
-
 
 int create_shared_memory(size_t bytes);
 void* map_shared_memory(int id);

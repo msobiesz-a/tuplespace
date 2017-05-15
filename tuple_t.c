@@ -30,6 +30,7 @@ void destroy_tuple_elements(size_t headPtr)
     {
         size_t oldPtr = headPtr;
         tuple_element_t *element = dereference_pointer(headPtr);
+        bfree(element->data.value);
         headPtr = element->next;
         bfree(oldPtr);
     }
@@ -107,16 +108,6 @@ void add_element_to_tuple(size_t tuplePtr, size_t elementPtr)
         tuple = dereference_pointer(tuplePtr);
         tuple->head = elementPtr;
     }
-}
-
-bool match_tuple_to_pattern(const void *tuple, const void *pattern)
-{
-    return does_tuple_match_pattern((tuple_t *) tuple, (tuple_pattern_t *) pattern);
-}
-
-bool match_tuples(const void *first, const void *second)
-{
-    return do_tuples_match((tuple_t *) first, (tuple_t *) second);
 }
 
 bool does_tuple_match_pattern(tuple_t *tuple, tuple_pattern_t *pattern)
@@ -339,7 +330,7 @@ void destroy_patern(size_t patternPtr)
 {
     tuple_pattern_t *pattern = dereference_pointer(patternPtr);
     destroy_pattern_elements(pattern->head);
-    free(pattern);
+    bfree(patternPtr);
 }
 
 void add_integer_to_pattern(size_t patternPtr, int integer, condition_t conditionType)
@@ -360,6 +351,7 @@ void destroy_pattern_elements(size_t headPtr)
     {
         size_t oldPtr = headPtr;
         pattern_element_t *element = dereference_pointer(headPtr);
+        bfree(element->data.value);
         headPtr = element->next;
         bfree(oldPtr);
     }
@@ -373,8 +365,8 @@ size_t create_integer_pattern_element(int value, condition_t conditionType)
     *integer = value;
     pattern_element_t *element = dereference_pointer(elementPtr);
     element->data.valueType = INTEGER;
-    element = dereference_pointer(elementPtr);
     element->data.value = integerPtr;
+    element->conditionType = conditionType;
     element->next = 0;
     return elementPtr;
 }

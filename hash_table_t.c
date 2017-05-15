@@ -24,6 +24,7 @@ void destroy_hash_table(size_t hashTablePtr)
     hash_table_t *hashTable = dereference_pointer(hashTablePtr);
     for(size_t i = 0; i < hashTable->bucketsCount; ++i)
         destroy_list(hashTable->bucketsPtr + (i * sizeof(list_t)));
+    bfree(hashTable->bucketsPtr);
     bfree(hashTablePtr);
 }
 

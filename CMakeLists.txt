@@ -15,8 +15,10 @@ set(SOURCE_FILES
         tuple_space.c
         tuple_space.h
         utils.c
-        utils.h tuple_t.c tuple_t.h)
+        utils.h
+        tuple_t.c
+        tuple_t.h
+        )
 
-add_executable(test_allocator test_allocator.c test_allocator.h ${SOURCE_FILES})
-add_executable(host host.c host.h ${SOURCE_FILES})
-add_executable(guest guest.c guest.h ${SOURCE_FILES})
+add_executable(host host.c ${SOURCE_FILES})
+add_executable(guest guest.c ${SOURCE_FILES})

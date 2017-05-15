@@ -1,22 +1,17 @@
 #include <stdio.h>
 
-#include "guest.h"
-#include "list_t.h"
 #include "shared_allocator.h"
 #include "tuple_space.h"
 #include "tuple_t.h"
+#include "utils.h"
 
 
 int main(int argc, const char *argv[])
 {
-    int shmId = -1;
-    printf("Enter global shared memory handle: ");
-    if(!scanf("%d", &shmId))
-    {
-        printf("error: scanf\n");
-        exit(1);
-    }
-    map_memory_segment(shmId);
+    int shmId = read_shm_id_from_file("shmId");
+    printf("Shared memory ID: %d\n", shmId);
+
+    map_fixed_memory(shmId);
 
     size_t tupleSpacePtr = get_head();
     int status = 0;
@@ -37,7 +32,9 @@ int main(int argc, const char *argv[])
     if(status == 0)
         print_tuple(peeked2);
 
-    unmap_memory_segment();
+    destroy_patern(patternPtr1);
+    destroy_patern(patternPtr2);
+    unmap_fixed_memory();
 
     return 0;
 }

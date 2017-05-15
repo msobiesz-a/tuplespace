@@ -16,8 +16,6 @@ typedef struct block_descriptor_t
 typedef struct segment_descriptor_t
 {
     int shmId;
-    bool remapped;
-    int newShmId;
     size_t bytes;
     size_t blockCount;
     size_t usedBlockCount;
@@ -26,12 +24,16 @@ typedef struct segment_descriptor_t
     size_t head;
 } segment_descriptor_t;
 
-void create_memory_segment(size_t initialCapacityInBytes);
-int get_memory_segment_id();
+typedef struct fixed_memory_t
+{
+    int memShmId;
+} fixed_memory_t;
+
+int create_memory_segment(size_t initialCapacityInBytes);
 void remap_memory_segment_if_needed();
 void map_memory_segment(int shmId);
-void unmap_memory_segment();
-void destroy_memory_segment(segment_descriptor_t **shmPtr);
+int unmap_memory_segment();
+void destroy_memory_segment(int memorySegmentId);
 void resize_memory_segment();
 size_t balloc(size_t bytes);
 size_t find_first_fit_free_block(size_t bytes);
@@ -41,5 +43,12 @@ bool is_pointer_null(size_t ptr);
 void set_head(size_t ptr);
 size_t get_head();
 void bfree(size_t ptr);
+
+int create_fixed_memory();
+void map_fixed_memory(int shmId);
+void unmap_fixed_memory();
+void destroy_fixed_memory(int fixedMemoryId);
+
+void print_memory_info();
 
 #endif //UXP1A_SHARED_ALLOCATOR_H

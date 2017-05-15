@@ -64,8 +64,6 @@ void add_string_to_tuple(size_t tuplePtr, const char *literal);
 size_t create_integer_element(int value);
 size_t create_string_element(const char *literal);
 void add_element_to_tuple(size_t tuplePtr, size_t elementPtr);
-bool match_tuple_to_pattern(const void *tuple, const void *pattern);
-bool match_tuples(const void *first, const void *second);
 bool does_tuple_match_pattern(tuple_t *tuple, tuple_pattern_t *pattern);
 bool do_tuples_match(tuple_t *first, tuple_t *second);
 bool do_tuple_elements_match(tuple_element_t *first, tuple_element_t *second);

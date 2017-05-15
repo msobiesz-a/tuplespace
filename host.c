@@ -1,15 +1,15 @@
 #include <stdio.h>
 
-#include "host.h"
-#include "list_t.h"
 #include "shared_allocator.h"
 #include "tuple_space.h"
 #include "tuple_t.h"
+#include "utils.h"
 
 
 int main(int argc, const char *argv[])
 {
-    create_memory_segment(100);
+    int fixedShmId = create_fixed_memory();
+    map_fixed_memory(fixedShmId);
 
     size_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
     initialize_tuple_space(tupleSpacePtr, 10);
@@ -27,12 +27,14 @@ int main(int argc, const char *argv[])
     push_tuple(tupleSpacePtr, tuplePtr2);
     print_tuple(tuplePtr2);
 
-    printf("Shared memory ID: %d\n", get_memory_segment_id());
-    printf("Press any key to destroy shared memory...\n");
+    write_shm_id_to_file("shmId", fixedShmId);
+    printf("Shared memory ID: %d\n", fixedShmId);
+    printf("Blocked. Press any key to destroy shared memory...\n");
     getchar();
-
     destroy_tuple_space(tupleSpacePtr);
-    destroy_memory_segment(NULL);
+    print_memory_info();
+    unmap_fixed_memory();
+    destroy_fixed_memory(fixedShmId);
 
     return 0;
 }

@@ -17,6 +17,7 @@ void destroy_tuple_space(size_t tupleSpacePtr)
 {
     tuple_space_t *tupleSpace = dereference_pointer(tupleSpacePtr);
     destroy_hash_table(tupleSpace->hashTablePtr);
+    bfree(tupleSpacePtr);
 }
 
 void push_tuple(size_t tupleSpacePtr, size_t tuplePtr)
