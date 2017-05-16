@@ -7,8 +7,8 @@
 
 typedef enum value_t
 {
-    STRING = 6,
-    INTEGER = 7
+    STRING = 7,
+    INTEGER = 8
 } value_t;
 
 typedef struct tuple_element_data_t
@@ -74,7 +74,7 @@ bool is_element_less_than(tuple_element_t *tupleElement, tuple_element_t *patter
 bool is_element_less_equal(tuple_element_t *tupleElement, tuple_element_t *patternElement);
 bool is_element_greater_than(tuple_element_t *tupleElement, tuple_element_t *patternElement);
 bool is_element_greater_equal(tuple_element_t *tupleElement, tuple_element_t *patternElement);
-unsigned long hash_tuple(const void *tuple);
+unsigned long hash_tuple(size_t tuplePtr);
 void print_tuple(size_t tuplePtr);
 void print_tuple_element(size_t elementPtr);
 void print_integer_element(size_t elementPtr);

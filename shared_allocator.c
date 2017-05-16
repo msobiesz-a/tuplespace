@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 
+
 #include "shared_allocator.h"
 #include "shared_memory.h"
 
 
-const size_t INITIAL_CAPACITY = 1024;
+const size_t INITIAL_CAPACITY = 32;
 
 static fixed_memory_t *fixedPtr;
 static segment_descriptor_t *memPtr;
@@ -124,12 +125,10 @@ size_t balloc(size_t bytes)
     remap_memory_segment_if_needed();
     if(!bytes)
         return 0;
-    size_t blockPtr = find_first_fit_free_block(bytes);
-    if(is_pointer_null(blockPtr))
-    {
+    size_t blockPtr = 0;
+    // for now just re-scan the list
+    while(is_pointer_null(blockPtr = find_first_fit_free_block(bytes)))
         resize_memory_segment();
-        blockPtr = memPtr->lastBlock;
-    }
     block_descriptor_t *block = get_block_from_pointer(blockPtr);
     block->isFree = false;
     size_t unusedBytes = 0;

@@ -258,21 +258,26 @@ bool is_element_greater_equal(tuple_element_t *tupleElement, tuple_element_t *pa
     }
 }
 
-unsigned long hash_tuple(const void *tuple)
+unsigned long hash_tuple(size_t tuplePtr)
 {
-    tuple_t *tempTuple = (tuple_t *) tuple;
-    unsigned char *valueTypes = malloc(((tempTuple->iCount * INTEGER)
-                                        + (tempTuple->sCount * STRING)) * sizeof(char));
-    tuple_element_t *element = dereference_pointer(tempTuple->head);
-    while(element)
+    tuple_t *tuple = dereference_pointer(tuplePtr);
+    char *valueTypes = calloc(((tuple->iCount * INTEGER)
+                                        + (tuple->sCount * STRING)), sizeof(char));
+    size_t elementPtr = tuple->head;
+    tuple_element_t *element = dereference_pointer(tuple->head);
+    while(!is_pointer_null(elementPtr))
     {
         if(element->data.valueType == INTEGER)
-            strcat((char *) valueTypes, "INTEGER");
+            strcat(valueTypes, "INTEGER");
         else if(element->data.valueType == STRING)
-            strcat((char *) valueTypes, "STRING");
-        element = dereference_pointer(element->next);
+            strcat(valueTypes, "STRING");
+        else
+            assert(false);
+        elementPtr = element->next;
+        element = dereference_pointer(elementPtr);
     }
-    unsigned long tupleHash = hash(valueTypes);
+
+    unsigned long tupleHash = hash((unsigned char *) valueTypes);
     free(valueTypes);
     return tupleHash;
 }
