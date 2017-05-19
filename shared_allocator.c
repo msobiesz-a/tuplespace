@@ -2,165 +2,236 @@
 #include <stdio.h>
 #include <string.h>
 
-
+#include "monitor.h"
 #include "shared_allocator.h"
 #include "shared_memory.h"
 
 
-const size_t INITIAL_CAPACITY = 32;
+static const size_t INITIAL_ALLOCATION_SEGMENT_SIZE = 8192;
+static const size_t RESIZE_FACTOR = 2;
+static const size_t ALLOCATION_SEGMENT_HEADER_SIZE = sizeof(allocation_segment_t);
+static const size_t BLOCK_HEADER_SIZE = sizeof(memory_block_t);
+static const size_t MINIMAL_MEMORY_BLOCK_SIZE = 1;
 
-static fixed_memory_t *fixedPtr;
-static segment_descriptor_t *memPtr;
+static fixed_memory_t *fixedSharedMemory;
+static allocation_segment_t *mappedAllocationSegment;
 
-int create_fixed_memory()
+int create_fixed_shared_memory()
 {
     int shmId = create_shared_memory(sizeof(fixed_memory_t));
     fixed_memory_t *shmPtr = map_shared_memory(shmId);
-    shmPtr->memShmId = create_memory_segment(INITIAL_CAPACITY);
+    shmPtr->allocShmId = create_allocation_segment(INITIAL_ALLOCATION_SEGMENT_SIZE);
+    shmPtr->semId = create_semaphore(1);
     unmap_shared_memory(shmPtr);
     return shmId;
 }
 
-void map_fixed_memory(int shmId)
+void map_fixed_shared_memory(int shmId)
 {
-    fixedPtr = map_shared_memory(shmId);
-    map_memory_segment(fixedPtr->memShmId);
+    fixedSharedMemory = map_shared_memory(shmId);
+    map_allocation_segment(fixedSharedMemory->allocShmId);
 }
 
-void unmap_fixed_memory()
+void unmap_fixed_shared_memory()
 {
-    unmap_memory_segment();
-    unmap_shared_memory(fixedPtr);
-    fixedPtr = NULL;
+    unmap_allocation_segment();
+    unmap_shared_memory(fixedSharedMemory);
+    fixedSharedMemory = NULL;
 }
 
-void destroy_fixed_memory(int fixedMemoryId)
+void destroy_fixed_shared_memory(int fixedMemoryId)
 {
-    map_fixed_memory(fixedMemoryId);
-    int memShmId = fixedPtr->memShmId;
-    unmap_fixed_memory();
-    destroy_memory_segment(memShmId);
+    map_fixed_shared_memory(fixedMemoryId);
+    int semId = fixedSharedMemory->semId;
+    int memShmId = fixedSharedMemory->allocShmId;
+    unmap_fixed_shared_memory();
+    destroy_semaphore(semId);
+    destroy_allocation_segment(memShmId);
     destroy_shared_memory(fixedMemoryId);
 }
 
-int create_memory_segment(size_t initialCapacityInBytes)
+int create_allocation_segment(size_t bytes)
 {
-    if(initialCapacityInBytes < sizeof(block_descriptor_t) + 1)
-        initialCapacityInBytes = sizeof(block_descriptor_t) + 1;
-    int shmId = create_shared_memory(initialCapacityInBytes + sizeof(segment_descriptor_t));
-    map_memory_segment(shmId);
+    if(bytes < BLOCK_HEADER_SIZE + MINIMAL_MEMORY_BLOCK_SIZE)
+        bytes = BLOCK_HEADER_SIZE + MINIMAL_MEMORY_BLOCK_SIZE;
+    int shmId = create_shared_memory(bytes + ALLOCATION_SEGMENT_HEADER_SIZE);
+    map_allocation_segment(shmId);
+    initialize_allocation_segment(shmId, bytes);
+    return unmap_allocation_segment();
+}
 
-    memPtr->shmId = shmId;
-    memPtr->bytes = initialCapacityInBytes;
-    memPtr->blockCount = 1;
-    memPtr->usedBlockCount = 0;
-    memPtr->firstBlock = sizeof(*memPtr);
-    memPtr->lastBlock = sizeof(*memPtr);
-    memPtr->head = 0;
-    block_descriptor_t *firstBlock = get_block_from_pointer(memPtr->firstBlock);
-    firstBlock->blockSize = initialCapacityInBytes - sizeof(*firstBlock);
+void initialize_allocation_segment(int shmId, size_t bytes)
+{
+    mappedAllocationSegment->shmId = shmId;
+    mappedAllocationSegment->bytes = bytes;
+    mappedAllocationSegment->blockCount = 1;
+    mappedAllocationSegment->usedBlockCount = 0;
+    mappedAllocationSegment->firstBlock = ALLOCATION_SEGMENT_HEADER_SIZE;
+    mappedAllocationSegment->lastBlock = ALLOCATION_SEGMENT_HEADER_SIZE;
+    mappedAllocationSegment->head = 0;
+    initialize_blocks_of_allocation_segment();
+}
+
+void initialize_blocks_of_allocation_segment()
+{
+    memory_block_t *firstBlock = get_block_from_pointer(mappedAllocationSegment->firstBlock);
+    firstBlock->blockSize = mappedAllocationSegment->bytes - BLOCK_HEADER_SIZE;
     firstBlock->isFree = true;
     firstBlock->nextBlock = 0;
     firstBlock->prevBlock = 0;
-
-    unmap_memory_segment();
-    return shmId;
 }
 
-void map_memory_segment(int shmId)
+void map_allocation_segment(int shmId)
 {
-    memPtr = map_shared_memory(shmId);
+    mappedAllocationSegment = map_shared_memory(shmId);
 }
 
-void remap_memory_segment_if_needed()
+void remap_allocation_segment_if_necessary()
 {
-    if(fixedPtr->memShmId != memPtr->shmId)
+    if(fixedSharedMemory->allocShmId != mappedAllocationSegment->shmId)
     {
-        unmap_memory_segment();
-        map_memory_segment(fixedPtr->memShmId);
+        unmap_allocation_segment();
+        map_allocation_segment(fixedSharedMemory->allocShmId);
     }
 }
 
-int unmap_memory_segment()
+int unmap_allocation_segment()
 {
-    int shmId = memPtr->shmId;
-    unmap_shared_memory(memPtr);
-    memPtr = NULL;
-
+    int shmId = mappedAllocationSegment->shmId;
+    unmap_shared_memory(mappedAllocationSegment);
+    mappedAllocationSegment = NULL;
     return shmId;
 }
 
-void destroy_memory_segment(int memorySegmentId)
+void destroy_allocation_segment(int memorySegmentId)
 {
-
     destroy_shared_memory(memorySegmentId);
 }
 
-void resize_memory_segment()
+void resize_allocation_segment()
 {
-    segment_descriptor_t *oldMemPtr = memPtr;
-    int shmId = create_memory_segment(oldMemPtr->bytes * 2);
-    map_memory_segment(shmId);
-    memcpy(memPtr + 1, oldMemPtr + 1, (oldMemPtr)->bytes);
-    memPtr->blockCount = oldMemPtr->blockCount + 1;
-    memPtr->usedBlockCount = oldMemPtr->usedBlockCount;
-    memPtr->firstBlock = oldMemPtr->firstBlock;
-    block_descriptor_t *block = get_block_from_pointer(oldMemPtr->lastBlock);
-    block->nextBlock = oldMemPtr->lastBlock + sizeof(*block) + block->blockSize;
-    memPtr->lastBlock = block->nextBlock;
-    memPtr->head = oldMemPtr->head;
-    block_descriptor_t *newBlock = get_block_from_pointer(memPtr->lastBlock);
-    newBlock->isFree = true;
-    newBlock->nextBlock = 0;
-    newBlock->prevBlock = oldMemPtr->lastBlock;
-    newBlock->blockSize = memPtr->bytes - oldMemPtr->bytes - sizeof(*newBlock);
-    fixedPtr->memShmId = memPtr->shmId;
+    allocation_segment_t *oldMemPtr = mappedAllocationSegment;
+    map_allocation_segment(create_allocation_segment(oldMemPtr->bytes * RESIZE_FACTOR));
+    copy_blocks_and_append_new_from_free_space_left(oldMemPtr, mappedAllocationSegment);
+    fixedSharedMemory->allocShmId = mappedAllocationSegment->shmId;
     int oldMemId = oldMemPtr->shmId;
     unmap_shared_memory(oldMemPtr);
-    destroy_memory_segment(oldMemId);
+    destroy_allocation_segment(oldMemId);
+}
+
+void copy_blocks_and_append_new_from_free_space_left(allocation_segment_t *firstSegment,
+                                                     allocation_segment_t *secondSegment)
+{
+    memcpy(secondSegment + 1, firstSegment + 1, (firstSegment)->bytes);
+    secondSegment->blockCount = firstSegment->blockCount + 1;
+    secondSegment->usedBlockCount = firstSegment->usedBlockCount;
+    secondSegment->firstBlock = firstSegment->firstBlock;
+    memory_block_t *oldLastBlock = get_block_from_pointer(firstSegment->lastBlock);
+    oldLastBlock->nextBlock = firstSegment->lastBlock + BLOCK_HEADER_SIZE + oldLastBlock->blockSize;
+    secondSegment->lastBlock = oldLastBlock->nextBlock;
+    secondSegment->head = firstSegment->head;
+    memory_block_t *newLastBlock = get_block_from_pointer(secondSegment->lastBlock);
+    newLastBlock->isFree = true;
+    newLastBlock->nextBlock = 0;
+    newLastBlock->prevBlock = firstSegment->lastBlock;
+    newLastBlock->blockSize = secondSegment->bytes - firstSegment->bytes - BLOCK_HEADER_SIZE;
 }
 
 size_t balloc(size_t bytes)
 {
-    remap_memory_segment_if_needed();
+    acquire_semaphore(fixedSharedMemory->semId);
+    remap_allocation_segment_if_necessary();
     if(!bytes)
         return 0;
-    size_t blockPtr = 0;
+    size_t freeBlockPtr = 0;
     // for now just re-scan the list
-    while(is_pointer_null(blockPtr = find_first_fit_free_block(bytes)))
-        resize_memory_segment();
-    block_descriptor_t *block = get_block_from_pointer(blockPtr);
-    block->isFree = false;
-    size_t unusedBytes = 0;
-    if(block->blockSize > bytes + sizeof(*block))
-         unusedBytes = block->blockSize - bytes - sizeof(*block);
-    if(unusedBytes > sizeof(*block)) {
-        block->blockSize = bytes;
-        size_t oldNextPtr = block->nextBlock;
-        block->nextBlock = blockPtr + sizeof(*block) + block->blockSize;
-        block_descriptor_t *next = get_block_from_pointer(block->nextBlock);
-        next->isFree = true;
-        next->nextBlock = oldNextPtr;
-        block_descriptor_t *oldNext = get_block_from_pointer(oldNextPtr);
-        if (oldNext)
-            oldNext->prevBlock = block->nextBlock;
-        next->prevBlock = blockPtr;
-        next->blockSize = unusedBytes;
-        if (memPtr->lastBlock == blockPtr)
-            memPtr->lastBlock = block->nextBlock;
-        ++(memPtr->blockCount);
+    while(is_pointer_null(freeBlockPtr = find_first_fit_free_block(bytes)))
+        resize_allocation_segment();
+    memory_block_t *freeBlock = get_block_from_pointer(freeBlockPtr);
+    freeBlock->isFree = false;
+    size_t unusedBytes = freeBlock->blockSize - bytes;
+    if(unusedBytes >= BLOCK_HEADER_SIZE + MINIMAL_MEMORY_BLOCK_SIZE)
+        make_new_block_with_unused_space(freeBlockPtr, bytes, unusedBytes);
+    ++(mappedAllocationSegment->usedBlockCount);
+    release_semaphore(fixedSharedMemory->semId);
+    return freeBlockPtr;
+}
+
+void make_new_block_with_unused_space(size_t blockPtr, size_t bytes, size_t unusedBytes)
+{
+    memory_block_t *block = get_block_from_pointer(blockPtr);
+    block->blockSize = bytes;
+    size_t oldNextBlockPtr = block->nextBlock;
+    block->nextBlock = blockPtr + BLOCK_HEADER_SIZE + block->blockSize;
+    memory_block_t *next = get_block_from_pointer(block->nextBlock);
+    next->isFree = true;
+    next->nextBlock = oldNextBlockPtr;
+    memory_block_t *oldNext = get_block_from_pointer(oldNextBlockPtr);
+    if (oldNext)
+        oldNext->prevBlock = block->nextBlock;
+    next->prevBlock = blockPtr;
+    next->blockSize = unusedBytes - BLOCK_HEADER_SIZE;
+    if (mappedAllocationSegment->lastBlock == blockPtr)
+        mappedAllocationSegment->lastBlock = block->nextBlock;
+    ++(mappedAllocationSegment->blockCount);
+}
+
+void bfree(size_t ptr)
+{
+    acquire_semaphore(fixedSharedMemory->semId);
+    remap_allocation_segment_if_necessary();
+    if(is_pointer_null(ptr))
+        return;
+    memory_block_t *block = get_block_from_pointer(ptr);
+    block->isFree = true;
+    --(mappedAllocationSegment->usedBlockCount);
+    merge_with_next_block_if_free(ptr);
+    merge_with_previous_block_if_free(ptr);
+    release_semaphore(fixedSharedMemory->semId);
+}
+
+void merge_with_next_block_if_free(size_t blockPtr)
+{
+    memory_block_t *block = get_block_from_pointer(blockPtr);
+    memory_block_t *next = get_block_from_pointer(block->nextBlock);
+    if(next && next->isFree)
+    {
+        if(mappedAllocationSegment->lastBlock == block->nextBlock)
+            mappedAllocationSegment->lastBlock = blockPtr;
+
+        block->nextBlock = next->nextBlock;
+        memory_block_t *nextNext = get_block_from_pointer(next->nextBlock);
+        if(nextNext)
+            nextNext->prevBlock = blockPtr;
+        block->blockSize += next->blockSize + BLOCK_HEADER_SIZE;
+        --(mappedAllocationSegment->blockCount);
     }
-    block->blockSize = bytes + unusedBytes;
-    ++(memPtr->usedBlockCount);
-    return blockPtr;
+}
+
+void merge_with_previous_block_if_free(size_t blockPtr)
+{
+    memory_block_t *block = get_block_from_pointer(blockPtr);
+    memory_block_t *previous = get_block_from_pointer(block->prevBlock);
+    if(previous && previous->isFree)
+    {
+        if(mappedAllocationSegment->lastBlock == blockPtr)
+            mappedAllocationSegment->lastBlock = block->prevBlock;
+
+        previous->nextBlock = block->nextBlock;
+        memory_block_t *updatedNext = get_block_from_pointer(block->nextBlock);
+        if(updatedNext)
+            updatedNext->prevBlock = block->prevBlock;
+        previous->blockSize += block->blockSize + BLOCK_HEADER_SIZE;
+        --(mappedAllocationSegment->blockCount);
+    }
 }
 
 size_t find_first_fit_free_block(size_t bytes)
 {
-    size_t current = memPtr->firstBlock;
+    size_t current = mappedAllocationSegment->firstBlock;
     while(!is_pointer_null(current))
     {
-        block_descriptor_t *block = get_block_from_pointer(current);
+        memory_block_t *block = get_block_from_pointer(current);
         if(block->isFree && block->blockSize >= bytes)
             return current;
         current = block->nextBlock;
@@ -168,82 +239,34 @@ size_t find_first_fit_free_block(size_t bytes)
     return 0;
 }
 
-block_descriptor_t *get_block_from_pointer(size_t ptr)
+memory_block_t *get_block_from_pointer(size_t ptr)
 {
-    if(ptr < memPtr->firstBlock)
+    if(ptr < mappedAllocationSegment->firstBlock)
         return NULL;
-    return (block_descriptor_t *) ((char *) memPtr + ptr);
+    return (memory_block_t *) ((char *) mappedAllocationSegment + ptr);
 }
 
 void *dereference_pointer(size_t ptr)
 {
     if(is_pointer_null(ptr))
         return NULL;
-    remap_memory_segment_if_needed();
-    return (void *) ((char *) memPtr + ptr + sizeof(block_descriptor_t));
+    return (void *) ((char *) mappedAllocationSegment + ptr + BLOCK_HEADER_SIZE);
 }
 
 bool is_pointer_null(size_t ptr)
 {
-    remap_memory_segment_if_needed();
-    return (ptr < memPtr->firstBlock);
+    remap_allocation_segment_if_necessary();
+    return (ptr < ALLOCATION_SEGMENT_HEADER_SIZE);
 }
 
-void set_head(size_t ptr)
+void set_start_pointer(size_t ptr)
 {
-    remap_memory_segment_if_needed();
-    memPtr->head = ptr;
+    remap_allocation_segment_if_necessary();
+    mappedAllocationSegment->head = ptr;
 }
 
-size_t get_head()
+size_t get_start_pointer()
 {
-    remap_memory_segment_if_needed();
-    return memPtr->head;
-}
-
-void bfree(size_t ptr)
-{
-    // heap corruption protection, e.g. double bfree call, see corresponding note
-    remap_memory_segment_if_needed();
-    if(is_pointer_null(ptr))
-        return;
-    block_descriptor_t *block = get_block_from_pointer(ptr);
-    block->isFree = true;
-    --(memPtr->usedBlockCount);
-
-    block_descriptor_t *next = get_block_from_pointer(block->nextBlock);
-    if(next && next->isFree)
-    {
-        if(memPtr->lastBlock == block->nextBlock)
-            memPtr->lastBlock = ptr;
-
-        block->nextBlock = next->nextBlock;
-        block_descriptor_t *nextNext = get_block_from_pointer(next->nextBlock);
-        if(nextNext)
-            nextNext->prevBlock = ptr;
-        block->blockSize += next->blockSize;
-        --(memPtr->blockCount);
-    }
-
-    block_descriptor_t *previous = get_block_from_pointer(block->prevBlock);
-    if(previous && previous->isFree)
-    {
-        if(memPtr->lastBlock == ptr)
-            memPtr->lastBlock = block->prevBlock;
-        previous->nextBlock = block->nextBlock;
-        if(next)
-            next->prevBlock = block->prevBlock;
-        previous->blockSize += block->blockSize;
-        --(memPtr->blockCount);
-    }
-}
-
-void print_memory_info()
-{
-    if(memPtr == NULL)
-        return;
-    printf("[Blocks used: %zu/%zu. Total bytes: %zu]\n",
-           memPtr->usedBlockCount,
-           memPtr->blockCount,
-           memPtr->bytes);
+    remap_allocation_segment_if_necessary();
+    return mappedAllocationSegment->head;
 }

@@ -8,12 +8,11 @@
 
 int main(int argc, const char *argv[])
 {
-    int fixedShmId = create_fixed_memory();
-    map_fixed_memory(fixedShmId);
-
+    int fixedShmId = create_fixed_shared_memory();
+    map_fixed_shared_memory(fixedShmId);
     size_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
     initialize_tuple_space(tupleSpacePtr, 10);
-    set_head(tupleSpacePtr);
+    set_start_pointer(tupleSpacePtr);
 
     size_t tuplePtr1 = create_tuple();
     add_integer_to_tuple(tuplePtr1, 10);
@@ -27,77 +26,14 @@ int main(int argc, const char *argv[])
     push_tuple(tupleSpacePtr, tuplePtr2);
     print_tuple(tuplePtr2);
 
-    size_t tuplePtr3 = create_tuple();
-    add_string_to_tuple(tuplePtr3, "very long character sequence, very long character sequence, very long character"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,");
-    add_integer_to_tuple(tuplePtr3, 1);
-    add_integer_to_tuple(tuplePtr3, 2);
-    add_integer_to_tuple(tuplePtr3, 3);
-    add_integer_to_tuple(tuplePtr3, 4);
-    add_integer_to_tuple(tuplePtr3, 5);
-    add_integer_to_tuple(tuplePtr3, 6);
-    add_integer_to_tuple(tuplePtr3, 7);
-    add_integer_to_tuple(tuplePtr3, 8);
-    add_integer_to_tuple(tuplePtr3, 9);
-    add_integer_to_tuple(tuplePtr3, 10);
-    add_integer_to_tuple(tuplePtr3, 11);
-    add_string_to_tuple(tuplePtr3, "very long character sequence, very long character sequence, very long character"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,"
-            "very long character sequence, very long character sequence, very long character sequence,");
-    add_integer_to_tuple(tuplePtr3, 12);
-    add_integer_to_tuple(tuplePtr3, 13);
-    add_integer_to_tuple(tuplePtr3, 14);
-    add_integer_to_tuple(tuplePtr3, 15);
-    add_integer_to_tuple(tuplePtr3, 16);
-    add_integer_to_tuple(tuplePtr3, 17);
-    add_integer_to_tuple(tuplePtr3, 18);
-    add_integer_to_tuple(tuplePtr3, 19);
-    add_integer_to_tuple(tuplePtr3, 20);
-    add_integer_to_tuple(tuplePtr3, 21);
-    print_tuple(tuplePtr3);
-    push_tuple(tupleSpacePtr, tuplePtr3);
-
     write_shm_id_to_file("shmId", fixedShmId);
     printf("Shared memory ID: %d\n", fixedShmId);
     printf("Blocked. Press any key to destroy shared memory...\n");
     getchar();
+    set_start_pointer(0);
     destroy_tuple_space(tupleSpacePtr);
-    print_memory_info();
-    unmap_fixed_memory();
-    destroy_fixed_memory(fixedShmId);
+    unmap_fixed_shared_memory();
+    destroy_fixed_shared_memory(fixedShmId);
 
     return 0;
 }

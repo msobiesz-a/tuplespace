@@ -8,6 +8,8 @@ set(SOURCE_FILES
         hash_table_t.h
         list_t.c
         list_t.h
+        monitor.c
+        monitor.h
         shared_allocator.c
         shared_allocator.h
         shared_memory.c

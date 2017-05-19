@@ -92,4 +92,5 @@ void print_pattern(size_t patternPtr);
 void print_pattern_element(size_t elementPtr);
 void print_integer_pattern_element(size_t elementPtr);
 void print_string_pattern_element(size_t elementPtr);
+
 #endif //UXP1A_TUPLE_T_H
