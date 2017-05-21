@@ -15,7 +15,7 @@ int create_semaphore(int value)
         printf("error: semget\n");
         exit(1);
     }
-    semun_t init = {.val = SEMAPHORE_INITIAL_VALUE};
+    semun_t init = {.val = value};
     if(semctl(semId, 0, SETVAL, init) == -1)
     {
         printf("error: semctl (initialize)\n");

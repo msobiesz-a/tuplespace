@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <zconf.h>
+#include <sys/wait.h>
 
 #include "shared_allocator.h"
 #include "tuple_space.h"
@@ -15,7 +17,17 @@ int main(int argc, const char *argv[])
     int status = 0;
     size_t peeked1 = 0;
     size_t peeked2 = 0;
-
+    pid_t pid  = fork();
+    if(pid == 0)
+    {
+        sleep(3);
+        size_t tuplePtr1 = create_tuple();
+        add_integer_to_tuple(tuplePtr1, 10);
+        add_integer_to_tuple(tuplePtr1, 20);
+        add_integer_to_tuple(tuplePtr1, 30);
+        push_tuple(tupleSpacePtr, tuplePtr1);
+        return 0;
+    }
     size_t patternPtr1 = create_pattern();
     add_integer_to_pattern(patternPtr1, 10, EQUAL);
     add_integer_to_pattern(patternPtr1, 20, EQUAL);
@@ -25,10 +37,15 @@ int main(int argc, const char *argv[])
 
     size_t patternPtr2 = create_pattern();
     add_integer_to_pattern(patternPtr2, 0, ANY);
-    add_string_to_pattern(patternPtr2, "text, more text...", EQUAL);
+    add_integer_to_pattern(patternPtr2, 0, ANY);
+    add_integer_to_pattern(patternPtr2, 0, ANY);
+    //add_string_to_pattern(patternPtr2, "text, more text...", EQUAL);
     status = peek_tuple(tupleSpacePtr, patternPtr2, &peeked2);
     if(status == 0)
         print_tuple(peeked2);
+
+    printf("end");
+    waitpid(pid,NULL,0);
 
     destroy_patern(patternPtr1);
     destroy_patern(patternPtr2);
