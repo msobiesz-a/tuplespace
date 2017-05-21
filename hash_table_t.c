@@ -42,19 +42,25 @@ int put_into_hash_table(size_t hashTablePtr, const size_t tuplePtr)
 
 int get_from_hash_table(const size_t hashTablePtr, const size_t patternPtr, size_t *tuplePtr)
 {
+
     hash_table_t *hashTable = dereference_pointer(hashTablePtr);
     size_t bucket = (size_t) hash_tuple(patternPtr) % hashTable->bucketsCount;
     list_t *list = dereference_pointer(hashTable->bucketsPtr + (bucket * sizeof(list_t)));
+    enter_monitor(list->monitor);
+    if(list->size == 0)
+        wait_on_monitor_condition(list->monitor,list->condition);
     for(size_t elementPtr = list->head; !is_pointer_null(elementPtr);)
     {
         list_element_t *element = dereference_pointer(elementPtr);
         if(does_tuple_match_pattern(dereference_pointer(element->data), dereference_pointer(patternPtr)))
         {
             *tuplePtr = element->data;
+            leave_monitor(list->monitor);
             return 0;
         }
         elementPtr = element->next;
     }
+    leave_monitor(list->monitor);
     return -1;
 }
 

@@ -1,4 +1,5 @@
-#include <stdio.h>
+ #include <stdio.h>
+#include <zconf.h>
 
 #include "shared_allocator.h"
 #include "tuple_space.h"
@@ -13,7 +14,6 @@ int main(int argc, const char *argv[])
     size_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
     initialize_tuple_space(tupleSpacePtr, 10);
     set_start_pointer(tupleSpacePtr);
-
     size_t tuplePtr1 = create_tuple();
     add_integer_to_tuple(tuplePtr1, 10);
     add_integer_to_tuple(tuplePtr1, 20);

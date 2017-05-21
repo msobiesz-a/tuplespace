@@ -15,6 +15,8 @@ typedef struct list_t
 {
     size_t size;
     size_t head;
+    size_t monitor;
+    size_t condition;
 } list_t;
 
 void initialize_list(size_t listPtr);

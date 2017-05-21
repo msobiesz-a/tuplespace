@@ -3,6 +3,7 @@
 #include "list_t.h"
 #include "shared_allocator.h"
 #include "tuple_t.h"
+#include "monitor.h"
 
 
 void initialize_list(size_t listPtr)
@@ -12,6 +13,8 @@ void initialize_list(size_t listPtr)
         return;
     list->size = 0;
     list->head = 0;
+    list->monitor = create_monitor();
+    list->condition = create_condition_variable();
 }
 
 void destroy_list(size_t listPtr)
@@ -19,6 +22,8 @@ void destroy_list(size_t listPtr)
     list_t *list = dereference_pointer(listPtr);
     if(list == NULL)
         return;
+    destroy_condition_variable(list->condition);
+    destroy_monitor(list->monitor);
     size_t dataPtr = 0;
     while(list->size > 0)
         if(remove_from_list_after(listPtr, 0, &dataPtr) == 0)
@@ -36,6 +41,7 @@ int insert_into_list_after(size_t listPtr, size_t elementPtr, const size_t dataP
     list_element_t *newElement = dereference_pointer(newElementPtr);
     if(newElement == NULL)
         return -1;
+    enter_monitor(list->monitor);
     newElement->data = dataPtr;
     list_element_t *element = dereference_pointer(elementPtr);
     list = dereference_pointer(listPtr);
@@ -50,6 +56,8 @@ int insert_into_list_after(size_t listPtr, size_t elementPtr, const size_t dataP
         element->next = newElementPtr;
     }
     ++list->size;
+    signal_monitor_condition(list->monitor,list->condition);
+    leave_monitor(list->monitor);
     return 0;
 }
 

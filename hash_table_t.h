@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "list_t.h"
+#include "monitor.h"
 
 
 typedef struct hash_table_t
