@@ -10,6 +10,7 @@
 
 int main(int argc, const char *argv[])
 {
+    pid_t pid  = fork();
     int shmId = read_shm_id_from_file("shmId");
     printf("Shared memory ID: %d\n", shmId);
     map_fixed_shared_memory(shmId);
@@ -17,7 +18,7 @@ int main(int argc, const char *argv[])
     int status = 0;
     size_t peeked1 = 0;
     size_t peeked2 = 0;
-    pid_t pid  = fork();
+
     if(pid == 0)
     {
         sleep(3);
@@ -26,6 +27,7 @@ int main(int argc, const char *argv[])
         add_integer_to_tuple(tuplePtr1, 20);
         add_integer_to_tuple(tuplePtr1, 30);
         push_tuple(tupleSpacePtr, tuplePtr1);
+        unmap_fixed_shared_memory();
         return 0;
     }
     size_t patternPtr1 = create_pattern();
@@ -44,8 +46,6 @@ int main(int argc, const char *argv[])
     if(status == 0)
         print_tuple(peeked2);
 
-    printf("end");
-    waitpid(pid,NULL,0);
 
     destroy_patern(patternPtr1);
     destroy_patern(patternPtr2);
