@@ -24,4 +24,4 @@ set(SOURCE_FILES
 
 add_executable(host host.c ${SOURCE_FILES})
 add_executable(guest guest.c ${SOURCE_FILES})
-add_executable(testInt testInt.c ${SOURCE_FILES})
+add_executable(testInteger testInt.c ${SOURCE_FILES})

@@ -20,10 +20,10 @@ void destroy_tuple_space(size_t tupleSpacePtr)
     bfree(tupleSpacePtr);
 }
 
-void push_tuple(size_t tupleSpacePtr, size_t tuplePtr)
+int push_tuple(size_t tupleSpacePtr, size_t tuplePtr)
 {
     tuple_space_t *tupleSpace = dereference_pointer(tupleSpacePtr);
-    put_into_hash_table(tupleSpace->hashTablePtr, tuplePtr);
+    return put_into_hash_table(tupleSpace->hashTablePtr, tuplePtr);
 }
 
 int peek_tuple(size_t tupleSpacePtr, size_t pattern, size_t *out)

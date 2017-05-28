@@ -20,7 +20,8 @@ int main(int argc, const char *argv[]) {
         {
             add_integer_to_tuple(tupleIn, j);
         }
-        push_tuple(tupleSpacePtr, tupleIn);
+        if(push_tuple(tupleSpacePtr, tupleIn) == -1)
+            printf("Błąd \n");
         printf("Add tuple:");
         print_tuple(tupleIn);
     }
