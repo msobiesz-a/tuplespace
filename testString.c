@@ -5,7 +5,7 @@
 #include "tuple_t.h"
 #define numberOfTuples 20
 int main(int argc, const char *argv[]) {
-    printf("Integer Test started \n");
+    printf("String Test started \n");
     int fixedShmId = create_fixed_shared_memory();
     map_fixed_shared_memory(fixedShmId);
     size_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
@@ -14,13 +14,15 @@ int main(int argc, const char *argv[]) {
     int status = 0;
     size_t tupleIn;
     size_t tupleOut;
+    char string [3] ;
     //insert tuples
     for(int i = 0; i <= numberOfTuples; i++)
     {
         tupleIn = create_tuple();
         for(int j = 0; j <=i; j++ )
         {
-            add_integer_to_tuple(tupleIn, j);
+            sprintf(string,"%d",j);
+            add_string_to_tuple(tupleIn, string);
         }
         if(push_tuple(tupleSpacePtr, tupleIn) == -1)
             printf("Błąd \n");
@@ -35,7 +37,8 @@ int main(int argc, const char *argv[]) {
         pattern = create_pattern();
         for(int j = 0; j <=i; j++ )
         {
-            add_integer_to_pattern(pattern, j, EQUAL);
+            sprintf(string,"%d",j);
+            add_string_to_pattern(pattern, string, EQUAL);
         }
         status = peek_tuple(tupleSpacePtr, pattern, &tupleOut);
         printf("Tuple peeked:");
@@ -46,9 +49,9 @@ int main(int argc, const char *argv[]) {
     for(int i = 0; i <= numberOfTuples; i++)
     {
         tupleIn = create_tuple();
-        for(int j = 0; j <=i; j++ )
-        {
-            add_integer_to_tuple(tupleIn, j);
+        for(int j = 0; j <=i; j++ ){
+            sprintf(string,"%d",j);
+            add_string_to_tuple(tupleIn, string);
         }
         if(push_tuple(tupleSpacePtr, tupleIn) != -1)
             printf("Error, insert same tuple\n");
@@ -60,33 +63,10 @@ int main(int argc, const char *argv[]) {
     for(int i = 0; i <= numberOfTuples; i++)
     {
         pattern = create_pattern();
-        for(int j = 1; j <=i+1; j++ )
-        {
-            add_integer_to_pattern(pattern, j, LESS_THAN);
-        }
-        status = peek_tuple(tupleSpacePtr, pattern, &tupleOut);
-        printf("lower tuple peeked  :");
-        print_pattern(tupleOut);
-    }
-    printf("All lower tuples peeked\n");
-    for(int i = 0; i <= numberOfTuples; i++)
-    {
-        pattern = create_pattern();
-        for(int j = -1; j <=i-1; j++ )
-        {
-            add_integer_to_pattern(pattern, j, GREATER);
-        }
-        status = peek_tuple(tupleSpacePtr, pattern, &tupleOut);
-        printf("greater tuple peeked  :");
-        print_pattern(tupleOut);
-    }
-    printf("All greater tuples peeked\n");
-    for(int i = 0; i <= numberOfTuples; i++)
-    {
-        pattern = create_pattern();
         for(int j = 0; j <=i; j++ )
         {
-            add_integer_to_pattern(pattern, j, EQUAL);
+            sprintf(string,"%d",j);
+            add_string_to_tuple(tupleIn, string);
         }
         status = pop_tuple(tupleSpacePtr, pattern, &tupleOut);
         printf("Tuple poped:");
@@ -97,6 +77,6 @@ int main(int argc, const char *argv[]) {
     destroy_tuple_space(tupleSpacePtr);
     unmap_fixed_shared_memory();
     destroy_fixed_shared_memory(fixedShmId);
-    printf("Integer Test successed\n");
+    printf("String Test successed\n");
     return 0;
 }

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
-project(UXP1A)
+project(tuplespace)
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCE_FILES
         hash_table_t.c
@@ -25,3 +25,5 @@ set(SOURCE_FILES
 add_executable(host host.c ${SOURCE_FILES})
 add_executable(guest guest.c ${SOURCE_FILES})
 add_executable(testInteger testInt.c ${SOURCE_FILES})
+add_executable(testString testString.c ${SOURCE_FILES})
+add_executable(testSynchronization testSynchronization.c ${SOURCE_FILES})
