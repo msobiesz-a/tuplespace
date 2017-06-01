@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <zconf.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "shared_allocator.h"
 #include "tuple_space.h"

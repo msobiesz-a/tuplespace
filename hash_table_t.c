@@ -30,8 +30,8 @@ void destroy_hash_table(size_t hashTablePtr)
 
 int put_into_hash_table(size_t hashTablePtr, const size_t tuplePtr) {
     int status = 0;
-    if (is_in_hash_table(hashTablePtr, tuplePtr) == 0) {
-        return -1;
+    if (is_in_hash_table(hashTablePtr, tuplePtr)) {
+        return 1;
     }
     hash_table_t *hashTable = dereference_pointer(hashTablePtr);
     size_t bucket = (size_t) hash_tuple(tuplePtr) % hashTable->bucketsCount;
@@ -43,7 +43,6 @@ int put_into_hash_table(size_t hashTablePtr, const size_t tuplePtr) {
 
 int get_from_hash_table(const size_t hashTablePtr, const size_t patternPtr, size_t *tuplePtr)
 {
-
     hash_table_t *hashTable = dereference_pointer(hashTablePtr);
     size_t bucket = (size_t) hash_tuple(patternPtr) % hashTable->bucketsCount;
     list_t *list = dereference_pointer(hashTable->bucketsPtr + (bucket * sizeof(list_t)));
@@ -72,10 +71,10 @@ bool is_in_hash_table(const size_t hashTablePtr, const size_t tuplePtr)
     {
         list_element_t *element = dereference_pointer(elementPtr);
         if(do_tuples_match(dereference_pointer(element->data), dereference_pointer(tuplePtr)))
-            return 0;
+            return true;
         elementPtr = element->next;
     }
-    return -1;
+    return false;
 }
 
 int remove_from_hash_table(size_t hashTablePtr, const size_t patternPtr, size_t *tuplePtr)
