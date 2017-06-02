@@ -6,9 +6,9 @@
 #include "monitor.h"
 
 
-void initialize_list(size_t listPtr)
+void initialize_list(ptr_t listPtr)
 {
-    list_t *list = dereference_pointer(listPtr);
+    list_t *list = deref_ptr(listPtr);
     if(list == NULL)
         return;
     list->size = 0;
@@ -17,34 +17,36 @@ void initialize_list(size_t listPtr)
     list->condition = create_condition_variable();
 }
 
-void destroy_list(size_t listPtr)
+void destroy_list(ptr_t listPtr)
 {
-    list_t *list = dereference_pointer(listPtr);
+    list_t *list = deref_ptr(listPtr);
     if(list == NULL)
         return;
     destroy_condition_variable(list->condition);
     destroy_monitor(list->monitor);
-    size_t dataPtr = 0;
+    ptr_t dataPtr = 0;
     while(list->size > 0)
         if(remove_from_list_after(listPtr, 0, &dataPtr) == 0)
+        {
+            set_remote_mem_ops(true);
             destroy_tuple(dataPtr);
-    // heap corruption protection, see corresponding note
-    // bfree(listPtr);
+            set_remote_mem_ops(false);
+        }
 }
 
-int insert_into_list_after(size_t listPtr, size_t elementPtr, const size_t dataPtr)
+int insert_into_list_after(ptr_t listPtr, ptr_t elementPtr, const ptr_t dataPtr)
 {
-    list_t *list = dereference_pointer(listPtr);
+    list_t *list = deref_ptr(listPtr);
     if(list == NULL)
         return -1;
-    size_t newElementPtr = balloc(sizeof(list_element_t));
-    list_element_t *newElement = dereference_pointer(newElementPtr);
+    ptr_t newElementPtr = balloc(sizeof(list_element_t));
+    list_element_t *newElement = deref_ptr(newElementPtr);
     if(newElement == NULL)
         return -1;
     enter_monitor(list->monitor);
-    newElement->data = dataPtr;
-    list_element_t *element = dereference_pointer(elementPtr);
-    list = dereference_pointer(listPtr);
+    newElement->data = clone_into_shared_memory(dataPtr);
+    list_element_t *element = deref_ptr(elementPtr);
+    list = deref_ptr(listPtr);
     if(element == NULL)
     {
         newElement->next = list->head;
@@ -61,27 +63,27 @@ int insert_into_list_after(size_t listPtr, size_t elementPtr, const size_t dataP
     return 0;
 }
 
-int remove_from_list_after(size_t listPtr, size_t elementPtr, size_t *dataPtr)
+int remove_from_list_after(ptr_t listPtr, ptr_t elementPtr, ptr_t *dataPtr)
 {
-    list_t *list = dereference_pointer(listPtr);
+    list_t *list = deref_ptr(listPtr);
     if(list == NULL)
         return -1;
     if(list->size == 0)
         return -1;
-    list_element_t *element = dereference_pointer(elementPtr);
-    size_t oldElement = 0;
+    list_element_t *element = deref_ptr(elementPtr);
+    ptr_t oldElement = 0;
     if(element == NULL)
     {
-        list_element_t *head = dereference_pointer(list->head);
+        list_element_t *head = deref_ptr(list->head);
         *dataPtr = head->data;
         oldElement = list->head;
         list->head = head->next;
     }
     else
     {
-        if(is_pointer_null(element->next))
+        if(is_ptr_null(element->next))
             return -1;
-        list_element_t *next = dereference_pointer(element->next);
+        list_element_t *next = deref_ptr(element->next);
         *dataPtr = next->data;
         oldElement = element->next;
         element->next = next->next;

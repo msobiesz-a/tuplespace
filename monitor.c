@@ -58,31 +58,31 @@ void release_semaphore(int semId)
     }
 }
 
-size_t create_condition_variable()
+ptr_t create_condition_variable()
 {
-    size_t condVarPtr = balloc(sizeof(condition_variable_t));
-    condition_variable_t *condVar = dereference_pointer(condVarPtr);
+    ptr_t condVarPtr = balloc(sizeof(condition_variable_t));
+    condition_variable_t *condVar = deref_ptr(condVarPtr);
     condVar->semId = create_semaphore(0);
     condVar->waitingCount = 0;
     return condVarPtr;
 }
 
-void destroy_condition_variable(size_t condVarPtr)
+void destroy_condition_variable(ptr_t condVarPtr)
 {
-    condition_variable_t *condVar = dereference_pointer(condVarPtr);
+    condition_variable_t *condVar = deref_ptr(condVarPtr);
     destroy_semaphore(condVar->semId);
     bfree(condVarPtr);
 }
 
-void wait_on_condition_variable(size_t condVarPtr)
+void wait_on_condition_variable(ptr_t condVarPtr)
 {
-    condition_variable_t *condVar = dereference_pointer(condVarPtr);
+    condition_variable_t *condVar = deref_ptr(condVarPtr);
     acquire_semaphore(condVar->semId);
 }
 
-bool signal_condition_variable(size_t condVarPtr)
+bool signal_condition_variable(ptr_t condVarPtr)
 {
-    condition_variable_t *condVar = dereference_pointer(condVarPtr);
+    condition_variable_t *condVar = deref_ptr(condVarPtr);
     if(condVar->waitingCount)
     {
         --condVar->waitingCount;
@@ -93,42 +93,42 @@ bool signal_condition_variable(size_t condVarPtr)
         return false;
 }
 
-size_t create_monitor()
+ptr_t create_monitor()
 {
-    size_t monitorPtr = balloc(sizeof(monitor_t));
-    monitor_t *monitor = dereference_pointer(monitorPtr);
+    ptr_t monitorPtr = balloc(sizeof(monitor_t));
+    monitor_t *monitor = deref_ptr(monitorPtr);
     monitor->semId = create_semaphore(1);
     return monitorPtr;
 }
 
-void destroy_monitor(size_t monitorPtr)
+void destroy_monitor(ptr_t monitorPtr)
 {
-    monitor_t *monitor = dereference_pointer(monitorPtr);
+    monitor_t *monitor = deref_ptr(monitorPtr);
     destroy_semaphore(monitor->semId);
     bfree(monitorPtr);
 }
 
-void enter_monitor(size_t monitorPtr)
+void enter_monitor(ptr_t monitorPtr)
 {
-    monitor_t *monitor = dereference_pointer(monitorPtr);
+    monitor_t *monitor = deref_ptr(monitorPtr);
     acquire_semaphore(monitor->semId);
 }
 
-void leave_monitor(size_t monitorPtr)
+void leave_monitor(ptr_t monitorPtr)
 {
-    monitor_t *monitor = dereference_pointer(monitorPtr);
+    monitor_t *monitor = deref_ptr(monitorPtr);
     release_semaphore(monitor->semId);
 }
 
-void wait_on_monitor_condition(size_t monitorPtr, size_t condVarPtr)
+void wait_on_monitor_condition(ptr_t monitorPtr, ptr_t condVarPtr)
 {
-    condition_variable_t *condVar = dereference_pointer(condVarPtr);
+    condition_variable_t *condVar = deref_ptr(condVarPtr);
     ++condVar->waitingCount;
     leave_monitor(monitorPtr);
     wait_on_condition_variable(condVarPtr);
 }
 
-void signal_monitor_condition(size_t monitorPtr, size_t condVarPtr)
+void signal_monitor_condition(ptr_t monitorPtr, ptr_t condVarPtr)
 {
     if(signal_condition_variable(condVarPtr))
         enter_monitor(monitorPtr);

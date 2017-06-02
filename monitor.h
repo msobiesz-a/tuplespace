@@ -35,16 +35,16 @@ int destroy_semaphore(int semId);
 void acquire_semaphore(int semId);
 void release_semaphore(int semId);
 
-size_t create_condition_variable();
-void destroy_condition_variable(size_t condVarPtr);
-void wait_on_condition_variable(size_t condVarPtr);
-bool signal_condition_variable(size_t condVarPtr);
+ptr_t create_condition_variable();
+void destroy_condition_variable(ptr_t condVarPtr);
+void wait_on_condition_variable(ptr_t condVarPtr);
+bool signal_condition_variable(ptr_t condVarPtr);
 
-size_t create_monitor();
-void destroy_monitor(size_t monitorPtr);
-void enter_monitor(size_t monitorPtr);
-void leave_monitor(size_t monitorPtr);
-void wait_on_monitor_condition(size_t monitorPtr, size_t condVarPtr);
-void signal_monitor_condition(size_t monitorPtr, size_t condVarPtr);
+ptr_t create_monitor();
+void destroy_monitor(ptr_t monitorPtr);
+void enter_monitor(ptr_t monitorPtr);
+void leave_monitor(ptr_t monitorPtr);
+void wait_on_monitor_condition(ptr_t monitorPtr, ptr_t condVarPtr);
+void signal_monitor_condition(ptr_t monitorPtr, ptr_t condVarPtr);
 
 #endif //UXP1A_MONITOR_H

@@ -10,16 +10,13 @@
 #define numberOfTuples 5
 int main(int argc, const char *argv[]) {
     printf("Synchronization Test started \n");
-    int fixedShmId = create_fixed_shared_memory();
-    map_fixed_shared_memory(fixedShmId);
-    size_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
-    initialize_tuple_space(tupleSpacePtr, 10);
-    set_start_pointer(tupleSpacePtr);
+    int handle = init_host();
+    ptr_t tuplespace = get_tuplespace();
     int status;
-    size_t peeked = 0;
-    size_t tupleIn;
-    size_t tupleOut;
-    size_t pattern;
+    ptr_t peeked = 0;
+    ptr_t tupleIn;
+    ptr_t tupleOut;
+    ptr_t pattern;
     char string [3] ;
     pid_t pid1 = fork();
     pid_t pid2 = fork();
@@ -35,7 +32,7 @@ int main(int argc, const char *argv[]) {
                     sprintf(string,"%d",j);
                     add_string_to_tuple(tupleIn, string);
                 }
-                if (push_tuple(tupleSpacePtr, tupleIn) == -1)
+                if (push_tuple(tuplespace, tupleIn) == -1)
                     printf("same tuple facotry 1\n");
                 printf("Factory 1 Add tuple: \n");
                 print_tuple(tupleIn);
@@ -52,7 +49,7 @@ int main(int argc, const char *argv[]) {
                     sprintf(string,"%d",j);
                     add_string_to_tuple(tupleIn, string);
                 }
-                if (push_tuple(tupleSpacePtr, tupleIn) == -1)
+                if (push_tuple(tuplespace, tupleIn) == -1)
                     printf("same tuple factory2\n");
                 printf("Factory 2 Add tuple: \n");
                 print_tuple(tupleIn);
@@ -70,7 +67,7 @@ int main(int argc, const char *argv[]) {
                     sprintf(string,"%d",j);
                     add_string_to_pattern(pattern, string, EQUAL);
                 }
-                status = peek_tuple(tupleSpacePtr, pattern, &peeked);
+                status = peek_tuple(tuplespace, pattern, &peeked);
                 if(status == 0) {
                     printf("consumer 1 peeked tuple: \n");
                     print_tuple(peeked);
@@ -92,7 +89,7 @@ int main(int argc, const char *argv[]) {
                     sprintf(string, "%d", j);
                     add_string_to_pattern(pattern, string, EQUAL);
                 }
-                status = peek_tuple(tupleSpacePtr, pattern, &peeked);
+                status = peek_tuple(tuplespace, pattern, &peeked);
                 if (status == 0) {
                     printf("consumer 2 peeked tuple:\n");
                     print_tuple(peeked);
@@ -104,8 +101,6 @@ int main(int argc, const char *argv[]) {
     waitpid(pid1,0,0);
     waitpid(pid2,0,0);
     destroy_patern(pattern);
-    destroy_tuple_space(tupleSpacePtr);
-    unmap_fixed_shared_memory();
-    destroy_fixed_shared_memory(fixedShmId);
+    free_host(handle);
     return 0;
 }

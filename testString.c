@@ -8,12 +8,12 @@ int main(int argc, const char *argv[]) {
     printf("String Test started \n");
     int fixedShmId = create_fixed_shared_memory();
     map_fixed_shared_memory(fixedShmId);
-    size_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
+    ptr_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
     initialize_tuple_space(tupleSpacePtr, 10);
     set_start_pointer(tupleSpacePtr);
     int status = 0;
-    size_t tupleIn;
-    size_t tupleOut;
+    ptr_t tupleIn;
+    ptr_t tupleOut;
     char string [3] ;
     //insert tuples
     for(int i = 0; i <= numberOfTuples; i++)
@@ -30,7 +30,7 @@ int main(int argc, const char *argv[]) {
         print_tuple(tupleIn);
     }
     printf("All tuples added\n");
-    size_t pattern = create_pattern();
+    ptr_t pattern = create_pattern();
     //peek tuples
     for(int i = 0; i <= numberOfTuples; i++)
     {

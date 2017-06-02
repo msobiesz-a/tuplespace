@@ -1,10 +1,13 @@
 #include <printf.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "monitor.h"
 #include "shared_allocator.h"
 #include "shared_memory.h"
+#include "tuple_t.h"
+#include "tuple_space.h"
 
 
 static const size_t INITIAL_ALLOCATION_SEGMENT_SIZE = 8192;
@@ -91,7 +94,9 @@ void remap_allocation_segment_if_necessary()
     if(fixedSharedMemory->allocShmId != mappedAllocationSegment->shmId)
     {
         unmap_allocation_segment();
+        acquire_semaphore(fixedSharedMemory->semId);
         map_allocation_segment(fixedSharedMemory->allocShmId);
+        release_semaphore(fixedSharedMemory->semId);
     }
 }
 
@@ -137,15 +142,15 @@ void copy_blocks_and_append_new_from_free_space_left(allocation_segment_t *first
     newLastBlock->blockSize = secondSegment->bytes - firstSegment->bytes - BLOCK_HEADER_SIZE;
 }
 
-size_t balloc(size_t bytes)
+ptr_t balloc(size_t bytes)
 {
-    acquire_semaphore(fixedSharedMemory->semId);
     remap_allocation_segment_if_necessary();
+    acquire_semaphore(fixedSharedMemory->semId);
     if(!bytes)
         return 0;
-    size_t freeBlockPtr = 0;
+    ptr_t freeBlockPtr = 0;
     // for now just re-scan the list
-    while(is_pointer_null(freeBlockPtr = find_first_fit_free_block(bytes)))
+    while(is_ptr_null(freeBlockPtr = find_first_fit_free_block(bytes)))
         resize_allocation_segment();
     memory_block_t *freeBlock = get_block_from_pointer(freeBlockPtr);
     freeBlock->isFree = false;
@@ -157,11 +162,11 @@ size_t balloc(size_t bytes)
     return freeBlockPtr;
 }
 
-void make_new_block_with_unused_space(size_t blockPtr, size_t bytes, size_t unusedBytes)
+void make_new_block_with_unused_space(ptr_t blockPtr, size_t bytes, size_t unusedBytes)
 {
     memory_block_t *block = get_block_from_pointer(blockPtr);
     block->blockSize = bytes;
-    size_t oldNextBlockPtr = block->nextBlock;
+    ptr_t oldNextBlockPtr = block->nextBlock;
     block->nextBlock = blockPtr + BLOCK_HEADER_SIZE + block->blockSize;
     memory_block_t *next = get_block_from_pointer(block->nextBlock);
     next->isFree = true;
@@ -176,13 +181,15 @@ void make_new_block_with_unused_space(size_t blockPtr, size_t bytes, size_t unus
     ++(mappedAllocationSegment->blockCount);
 }
 
-void bfree(size_t ptr)
+void bfree(ptr_t ptr)
 {
-    acquire_semaphore(fixedSharedMemory->semId);
     remap_allocation_segment_if_necessary();
-    if(is_pointer_null(ptr))
+    acquire_semaphore(fixedSharedMemory->semId);
+    if(is_ptr_null(ptr))
         return;
     memory_block_t *block = get_block_from_pointer(ptr);
+    if(block->isFree)
+        return;
     block->isFree = true;
     --(mappedAllocationSegment->usedBlockCount);
     merge_with_next_block_if_free(ptr);
@@ -190,7 +197,7 @@ void bfree(size_t ptr)
     release_semaphore(fixedSharedMemory->semId);
 }
 
-void merge_with_next_block_if_free(size_t blockPtr)
+void merge_with_next_block_if_free(ptr_t blockPtr)
 {
     memory_block_t *block = get_block_from_pointer(blockPtr);
     memory_block_t *next = get_block_from_pointer(block->nextBlock);
@@ -208,7 +215,7 @@ void merge_with_next_block_if_free(size_t blockPtr)
     }
 }
 
-void merge_with_previous_block_if_free(size_t blockPtr)
+void merge_with_previous_block_if_free(ptr_t blockPtr)
 {
     memory_block_t *block = get_block_from_pointer(blockPtr);
     memory_block_t *previous = get_block_from_pointer(block->prevBlock);
@@ -226,10 +233,10 @@ void merge_with_previous_block_if_free(size_t blockPtr)
     }
 }
 
-size_t find_first_fit_free_block(size_t bytes)
+ptr_t find_first_fit_free_block(size_t bytes)
 {
-    size_t current = mappedAllocationSegment->firstBlock;
-    while(!is_pointer_null(current))
+    ptr_t current = mappedAllocationSegment->firstBlock;
+    while(!is_ptr_null(current))
     {
         memory_block_t *block = get_block_from_pointer(current);
         if(block->isFree && block->blockSize >= bytes)
@@ -239,34 +246,71 @@ size_t find_first_fit_free_block(size_t bytes)
     return 0;
 }
 
-memory_block_t *get_block_from_pointer(size_t ptr)
+memory_block_t *get_block_from_pointer(ptr_t ptr)
 {
     if(ptr < mappedAllocationSegment->firstBlock)
         return NULL;
     return (memory_block_t *) ((char *) mappedAllocationSegment + ptr);
 }
 
-void *dereference_pointer(size_t ptr)
+void *deref_ptr(ptr_t ptr)
 {
-    if(is_pointer_null(ptr))
+    if(is_ptr_null(ptr))
         return NULL;
     return (void *) ((char *) mappedAllocationSegment + ptr + BLOCK_HEADER_SIZE);
 }
 
-bool is_pointer_null(size_t ptr)
+bool is_ptr_null(ptr_t ptr)
 {
     remap_allocation_segment_if_necessary();
     return (ptr < ALLOCATION_SEGMENT_HEADER_SIZE);
 }
 
-void set_start_pointer(size_t ptr)
+void set_start_pointer(ptr_t ptr)
 {
     remap_allocation_segment_if_necessary();
     mappedAllocationSegment->head = ptr;
 }
 
-size_t get_start_pointer()
+ptr_t get_start_pointer()
 {
     remap_allocation_segment_if_necessary();
     return mappedAllocationSegment->head;
+}
+
+int init_host()
+{
+    int handle = create_fixed_shared_memory();
+    map_fixed_shared_memory(handle);
+    ptr_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
+    initialize_tuple_space(tupleSpacePtr, 16);
+    set_start_pointer(tupleSpacePtr);
+    set_remote_mem_ops(false);
+    return handle;
+}
+
+void free_host(int handle)
+{
+    destroy_tuple_space(get_tuplespace());
+    set_start_pointer(0);
+    unmap_fixed_shared_memory();
+    destroy_fixed_shared_memory(handle);
+}
+
+int init_guest()
+{
+    int handle = read_handle_from_file("shmId");
+    map_fixed_shared_memory(handle);
+    set_remote_mem_ops(false);
+    return handle;
+}
+
+void free_guest(int handle)
+{
+    unmap_fixed_shared_memory();
+}
+
+ptr_t get_tuplespace()
+{
+    return get_start_pointer();
 }
