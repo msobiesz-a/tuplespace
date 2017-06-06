@@ -6,11 +6,8 @@
 #define numberOfTuples 20
 int main(int argc, const char *argv[]) {
     printf("Integer Test started \n");
-    int fixedShmId = create_fixed_shared_memory();
-    map_fixed_shared_memory(fixedShmId);
-    ptr_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
-    initialize_tuple_space(tupleSpacePtr, 10);
-    set_start_pointer(tupleSpacePtr);
+    int handle = init_host();
+    ptr_t tuplespace = get_tuplespace();
     int status = 0;
     ptr_t tupleIn;
     ptr_t tupleOut;
@@ -22,7 +19,7 @@ int main(int argc, const char *argv[]) {
         {
             add_integer_to_tuple(tupleIn, j);
         }
-        if(push_tuple(tupleSpacePtr, tupleIn) == -1)
+        if(push_tuple(tuplespace, tupleIn) == -1)
             printf("Błąd \n");
         printf("Add tuple:");
         print_tuple(tupleIn);
@@ -37,7 +34,7 @@ int main(int argc, const char *argv[]) {
         {
             add_integer_to_pattern(pattern, j, EQUAL);
         }
-        status = peek_tuple(tupleSpacePtr, pattern, &tupleOut);
+        status = peek_tuple(tuplespace, pattern, &tupleOut);
         printf("Tuple peeked:");
         print_pattern(tupleOut);
     }
@@ -50,7 +47,7 @@ int main(int argc, const char *argv[]) {
         {
             add_integer_to_tuple(tupleIn, j);
         }
-        if(push_tuple(tupleSpacePtr, tupleIn) != -1)
+        if(push_tuple(tuplespace, tupleIn))
             printf("Error, insert same tuple\n");
         printf("Try to add tuple:");
         print_tuple(tupleIn);
@@ -64,7 +61,7 @@ int main(int argc, const char *argv[]) {
         {
             add_integer_to_pattern(pattern, j, LESS_THAN);
         }
-        status = peek_tuple(tupleSpacePtr, pattern, &tupleOut);
+        status = peek_tuple(tuplespace, pattern, &tupleOut);
         printf("lower tuple peeked  :");
         print_pattern(tupleOut);
     }
@@ -76,7 +73,7 @@ int main(int argc, const char *argv[]) {
         {
             add_integer_to_pattern(pattern, j, GREATER);
         }
-        status = peek_tuple(tupleSpacePtr, pattern, &tupleOut);
+        status = peek_tuple(tuplespace, pattern, &tupleOut);
         printf("greater tuple peeked  :");
         print_pattern(tupleOut);
     }
@@ -88,15 +85,13 @@ int main(int argc, const char *argv[]) {
         {
             add_integer_to_pattern(pattern, j, EQUAL);
         }
-        status = pop_tuple(tupleSpacePtr, pattern, &tupleOut);
+        status = pop_tuple(tuplespace, pattern, &tupleOut);
         printf("Tuple poped:");
         print_pattern(tupleOut);
     }
     printf("All tuples poped\n");
     destroy_patern(pattern);
-    destroy_tuple_space(tupleSpacePtr);
-    unmap_fixed_shared_memory();
-    destroy_fixed_shared_memory(fixedShmId);
+    free_host(handle);
     printf("Integer Test successed\n");
     return 0;
 }

@@ -37,6 +37,7 @@ int main(int argc, const char *argv[]) {
                 printf("Factory 1 Add tuple: \n");
                 print_tuple(tupleIn);
             }
+            printf("Factory 1 Add all tuples: ##########################################\n");
             return 0;
         }
         else {
@@ -45,8 +46,8 @@ int main(int argc, const char *argv[]) {
                 sleep(1);
                 tupleIn = create_tuple();
                 for (int j = i; j >= 0; j--) {
-                    add_integer_to_tuple(tupleIn, j);
-                    sprintf(string,"%d",j);
+                    add_integer_to_tuple(tupleIn, 10+j);
+                    sprintf(string,"%d",10+j);
                     add_string_to_tuple(tupleIn, string);
                 }
                 if (push_tuple(tuplespace, tupleIn) == -1)
@@ -54,11 +55,14 @@ int main(int argc, const char *argv[]) {
                 printf("Factory 2 Add tuple: \n");
                 print_tuple(tupleIn);
             }
+            printf("Factory 2 Add all tuples: ##########################################\n");
         }
     }
     else {
         //tuple 1 consumer
         if(pid2==0) {
+
+            sleep(1);
             for(int i = 0; i <= numberOfTuples; i++) {
                 sleep(1);
                 pattern = create_pattern();
@@ -76,17 +80,19 @@ int main(int argc, const char *argv[]) {
                     printf("consumer 1 error \n");
                 }
             }
+            printf("Consumer 1 peeked all tuples: ##########################################\n");
             return 0;
         }
             //tuple 2 consumer
         else {
-            sleep(3);
+
+            sleep(1);
             for (int i = 0; i <= numberOfTuples; i++) {
                 sleep(1);
                 pattern = create_pattern();
-                for (int j = i; j >= 0; j--) {
+                for (int j = 0; j <= i; j++) {
                     add_integer_to_pattern(pattern, j, EQUAL);
-                    sprintf(string, "%d", j);
+                    sprintf(string,"%d",j);
                     add_string_to_pattern(pattern, string, EQUAL);
                 }
                 status = peek_tuple(tuplespace, pattern, &peeked);
@@ -95,12 +101,14 @@ int main(int argc, const char *argv[]) {
                     print_tuple(peeked);
                 }
             }
-
         }
+        printf("Consumer 2 peeked all tuples: ##########################################\n");
+        return 0;
     }
     waitpid(pid1,0,0);
     waitpid(pid2,0,0);
     destroy_patern(pattern);
     free_host(handle);
+    printf("Synchor test succes: \n");
     return 0;
 }

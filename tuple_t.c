@@ -549,6 +549,7 @@ ptr_t clone_into_shared_memory(ptr_t tuplePtr)
         element = deref_l(currElemPtr);
         currElemPtr = element->next;
     }
+
     return copyTuplePtr;
 }
 

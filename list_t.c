@@ -40,11 +40,12 @@ int insert_into_list_after(ptr_t listPtr, ptr_t elementPtr, const ptr_t dataPtr)
     if(list == NULL)
         return -1;
     ptr_t newElementPtr = balloc(sizeof(list_element_t));
+    enter_monitor(list->monitor);
+    ptr_t data = clone_into_shared_memory(dataPtr);
     list_element_t *newElement = deref_ptr(newElementPtr);
     if(newElement == NULL)
         return -1;
-    enter_monitor(list->monitor);
-    newElement->data = clone_into_shared_memory(dataPtr);
+    newElement->data = data;
     list_element_t *element = deref_ptr(elementPtr);
     list = deref_ptr(listPtr);
     if(element == NULL)
@@ -58,8 +59,6 @@ int insert_into_list_after(ptr_t listPtr, ptr_t elementPtr, const ptr_t dataPtr)
         element->next = newElementPtr;
     }
     ++list->size;
-    signal_monitor_condition(list->monitor,list->condition);
-    leave_monitor(list->monitor);
     return 0;
 }
 
