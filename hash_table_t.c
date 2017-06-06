@@ -31,7 +31,7 @@ void destroy_hash_table(ptr_t hashTablePtr)
 int put_into_hash_table(ptr_t hashTablePtr, const ptr_t tuplePtr) {
     int status = 0;
     if (is_in_hash_table(hashTablePtr, tuplePtr)) {
-        return 0;
+        return 1;
     }
     hash_table_t *hashTable = deref_ptr(hashTablePtr);
     ptr_t bucket = (ptr_t) hash_tuple(tuplePtr) % hashTable->bucketsCount;

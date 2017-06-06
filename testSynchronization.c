@@ -56,6 +56,7 @@ int main(int argc, const char *argv[]) {
                 print_tuple(tupleIn);
             }
             printf("Factory 2 Add all tuples: ##########################################\n");
+            wait(0);
         }
     }
     else {
@@ -103,10 +104,10 @@ int main(int argc, const char *argv[]) {
             }
         }
         printf("Consumer 2 peeked all tuples: ##########################################\n");
+        wait(0);
         return 0;
     }
-    waitpid(pid1,0,0);
-    waitpid(pid2,0,0);
+    wait(0);
     destroy_patern(pattern);
     free_host(handle);
     printf("Synchor test succes: \n");

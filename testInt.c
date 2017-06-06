@@ -47,7 +47,7 @@ int main(int argc, const char *argv[]) {
         {
             add_integer_to_tuple(tupleIn, j);
         }
-        if(push_tuple(tuplespace, tupleIn))
+        if(push_tuple(tuplespace, tupleIn)!=1)
             printf("Error, insert same tuple\n");
         printf("Try to add tuple:");
         print_tuple(tupleIn);

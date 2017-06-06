@@ -6,11 +6,8 @@
 #define numberOfTuples 20
 int main(int argc, const char *argv[]) {
     printf("String Test started \n");
-    int fixedShmId = create_fixed_shared_memory();
-    map_fixed_shared_memory(fixedShmId);
-    ptr_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
-    initialize_tuple_space(tupleSpacePtr, 10);
-    set_start_pointer(tupleSpacePtr);
+    int handle = init_host();
+    ptr_t tuplespace = get_tuplespace();
     int status = 0;
     ptr_t tupleIn;
     ptr_t tupleOut;
@@ -24,7 +21,7 @@ int main(int argc, const char *argv[]) {
             sprintf(string,"%d",j);
             add_string_to_tuple(tupleIn, string);
         }
-        if(push_tuple(tupleSpacePtr, tupleIn) == -1)
+        if(push_tuple(tuplespace, tupleIn) == -1)
             printf("Błąd \n");
         printf("Add tuple:");
         print_tuple(tupleIn);
@@ -40,7 +37,7 @@ int main(int argc, const char *argv[]) {
             sprintf(string,"%d",j);
             add_string_to_pattern(pattern, string, EQUAL);
         }
-        status = peek_tuple(tupleSpacePtr, pattern, &tupleOut);
+        status = peek_tuple(tuplespace, pattern, &tupleOut);
         printf("Tuple peeked:");
         print_pattern(tupleOut);
     }
@@ -53,7 +50,7 @@ int main(int argc, const char *argv[]) {
             sprintf(string,"%d",j);
             add_string_to_tuple(tupleIn, string);
         }
-        if(push_tuple(tupleSpacePtr, tupleIn) != -1)
+        if(push_tuple(tuplespace, tupleIn) != 1)
             printf("Error, insert same tuple\n");
         printf("Try to add tuple:");
         print_tuple(tupleIn);
@@ -68,15 +65,13 @@ int main(int argc, const char *argv[]) {
             sprintf(string,"%d",j);
             add_string_to_tuple(tupleIn, string);
         }
-        status = pop_tuple(tupleSpacePtr, pattern, &tupleOut);
+        status = pop_tuple(tuplespace, pattern, &tupleOut);
         printf("Tuple poped:");
         print_pattern(tupleOut);
     }
     printf("All tuples poped\n");
     destroy_patern(pattern);
-    destroy_tuple_space(tupleSpacePtr);
-    unmap_fixed_shared_memory();
-    destroy_fixed_shared_memory(fixedShmId);
+    free_host(handle);
     printf("String Test successed\n");
     return 0;
 }

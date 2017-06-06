@@ -283,7 +283,7 @@ int init_host()
     int handle = create_fixed_shared_memory();
     map_fixed_shared_memory(handle);
     ptr_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
-    initialize_tuple_space(tupleSpacePtr, 16);
+    initialize_tuple_space(tupleSpacePtr, 256);
     set_start_pointer(tupleSpacePtr);
     set_remote_mem_ops(false);
     return handle;
