@@ -27,10 +27,10 @@ typedef struct allocation_segment_t
 
 typedef struct fixed_memory_t
 {
+    int shmId;
     int allocShmId;
     int semId;
 } fixed_memory_t;
-
 
 int create_allocation_segment(size_t bytes);
 void initialize_allocation_segment(int shmId, size_t bytes);
@@ -56,8 +56,11 @@ ptr_t get_start_pointer();
 
 int create_fixed_shared_memory();
 void map_fixed_shared_memory(int shmId);
+void mark_fixed_memory_for_deletion();
+void mark_allocation_segment_for_deletion();
 void unmap_fixed_shared_memory();
 void destroy_fixed_shared_memory(int fixedMemoryId);
+void free_fixed_shared_memory();
 
 int init_host();
 void free_host(int handle);

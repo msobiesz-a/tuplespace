@@ -10,11 +10,12 @@
 #include "tuple_space.h"
 
 
-static const size_t INITIAL_ALLOCATION_SEGMENT_SIZE = 8192;
+static const size_t INITIAL_ALLOCATION_SEGMENT_SIZE = 8192 * 1024;
 static const size_t RESIZE_FACTOR = 2;
 static const size_t ALLOCATION_SEGMENT_HEADER_SIZE = sizeof(allocation_segment_t);
 static const size_t BLOCK_HEADER_SIZE = sizeof(memory_block_t);
 static const size_t MINIMAL_MEMORY_BLOCK_SIZE = 1;
+static const int INITIAL_BUCKETS_COUNT = 32;
 
 static fixed_memory_t *fixedSharedMemory;
 static allocation_segment_t *mappedAllocationSegment;
@@ -23,6 +24,7 @@ int create_fixed_shared_memory()
 {
     int shmId = create_shared_memory(sizeof(fixed_memory_t));
     fixed_memory_t *shmPtr = map_shared_memory(shmId);
+    shmPtr->shmId = shmId;
     shmPtr->allocShmId = create_allocation_segment(INITIAL_ALLOCATION_SEGMENT_SIZE);
     shmPtr->semId = create_semaphore(1);
     unmap_shared_memory(shmPtr);
@@ -42,6 +44,21 @@ void unmap_fixed_shared_memory()
     fixedSharedMemory = NULL;
 }
 
+void mark_fixed_memory_for_deletion()
+{
+    if(fixedSharedMemory == NULL)
+        return;
+    destroy_shared_memory(fixedSharedMemory->shmId);
+}
+
+void mark_allocation_segment_for_deletion()
+{
+    if(fixedSharedMemory == NULL)
+        return;
+    destroy_shared_memory(fixedSharedMemory->allocShmId);
+}
+
+
 void destroy_fixed_shared_memory(int fixedMemoryId)
 {
     map_fixed_shared_memory(fixedMemoryId);
@@ -51,6 +68,14 @@ void destroy_fixed_shared_memory(int fixedMemoryId)
     destroy_semaphore(semId);
     destroy_allocation_segment(memShmId);
     destroy_shared_memory(fixedMemoryId);
+}
+
+void free_fixed_shared_memory()
+{
+    if(fixedSharedMemory == NULL)
+        return;
+    destroy_semaphore(fixedSharedMemory->semId);
+    unmap_fixed_shared_memory();
 }
 
 int create_allocation_segment(size_t bytes)
@@ -117,6 +142,7 @@ void resize_allocation_segment()
 {
     allocation_segment_t *oldMemPtr = mappedAllocationSegment;
     map_allocation_segment(create_allocation_segment(oldMemPtr->bytes * RESIZE_FACTOR));
+    mark_allocation_segment_for_deletion();
     copy_blocks_and_append_new_from_free_space_left(oldMemPtr, mappedAllocationSegment);
     fixedSharedMemory->allocShmId = mappedAllocationSegment->shmId;
     int oldMemId = oldMemPtr->shmId;
@@ -282,8 +308,10 @@ int init_host()
 {
     int handle = create_fixed_shared_memory();
     map_fixed_shared_memory(handle);
+    mark_fixed_memory_for_deletion();
+    mark_allocation_segment_for_deletion();
     ptr_t tupleSpacePtr = balloc(sizeof(tuple_space_t));
-    initialize_tuple_space(tupleSpacePtr, 256);
+    initialize_tuple_space(tupleSpacePtr, INITIAL_BUCKETS_COUNT);
     set_start_pointer(tupleSpacePtr);
     set_remote_mem_ops(false);
     return handle;
@@ -293,8 +321,7 @@ void free_host(int handle)
 {
     destroy_tuple_space(get_tuplespace());
     set_start_pointer(0);
-    unmap_fixed_shared_memory();
-    destroy_fixed_shared_memory(handle);
+    free_fixed_shared_memory();
 }
 
 int init_guest()

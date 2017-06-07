@@ -26,7 +26,7 @@ int create_semaphore(int value)
 
 int destroy_semaphore(int semId)
 {
-    if(semctl(semId, 0, IPC_RMID == -1))
+    if(semctl(semId, 0, IPC_RMID) == -1)
     {
         printf("error: semctl (destroy)\n");
         exit(1);
