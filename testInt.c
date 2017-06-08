@@ -23,6 +23,7 @@ int main(int argc, const char *argv[]) {
             printf("Błąd \n");
         printf("Add tuple:");
         print_tuple(tupleIn);
+        destroy_tuple(tupleIn);
     }
     printf("All tuples added\n");
     ptr_t pattern = create_pattern();
@@ -36,7 +37,9 @@ int main(int argc, const char *argv[]) {
         }
         status = peek_tuple(tuplespace, pattern, &tupleOut);
         printf("Tuple peeked:");
-        print_pattern(tupleOut);
+        print_tuple(tupleOut);
+        destroy_tuple(tupleOut);
+        destroy_patern(pattern);
     }
     printf("All tuples peeked\n");
     //try to insert same tuples
@@ -51,6 +54,7 @@ int main(int argc, const char *argv[]) {
             printf("Error, insert same tuple\n");
         printf("Try to add tuple:");
         print_tuple(tupleIn);
+        destroy_tuple(tupleIn);
     }
     printf("Same tuples not inserted\n");
 
@@ -64,6 +68,8 @@ int main(int argc, const char *argv[]) {
         status = peek_tuple(tuplespace, pattern, &tupleOut);
         printf("lower tuple peeked  :");
         print_pattern(tupleOut);
+        destroy_tuple(tupleOut);
+        destroy_patern(pattern);
     }
     printf("All lower tuples peeked\n");
     for(int i = 0; i <= numberOfTuples; i++)
@@ -76,6 +82,8 @@ int main(int argc, const char *argv[]) {
         status = peek_tuple(tuplespace, pattern, &tupleOut);
         printf("greater tuple peeked  :");
         print_pattern(tupleOut);
+        destroy_tuple(tupleOut);
+        destroy_patern(pattern);
     }
     printf("All greater tuples peeked\n");
     for(int i = 0; i <= numberOfTuples; i++)
@@ -88,6 +96,8 @@ int main(int argc, const char *argv[]) {
         status = pop_tuple(tuplespace, pattern, &tupleOut);
         printf("Tuple poped:");
         print_pattern(tupleOut);
+        destroy_tuple(tupleOut);
+        destroy_patern(pattern);
     }
     printf("All tuples poped\n");
     destroy_patern(pattern);

@@ -25,6 +25,7 @@ int main(int argc, const char *argv[]) {
             printf("Błąd \n");
         printf("Add tuple:");
         print_tuple(tupleIn);
+        destroy_tuple(tupleIn);
     }
     printf("All tuples added\n");
     ptr_t pattern = create_pattern();
@@ -40,6 +41,8 @@ int main(int argc, const char *argv[]) {
         status = peek_tuple(tuplespace, pattern, &tupleOut);
         printf("Tuple peeked:");
         print_pattern(tupleOut);
+        destroy_tuple(tupleOut);
+        destroy_patern(pattern);
     }
     printf("All tuples peeked\n");
     //try to insert same tuples
@@ -54,6 +57,7 @@ int main(int argc, const char *argv[]) {
             printf("Error, insert same tuple\n");
         printf("Try to add tuple:");
         print_tuple(tupleIn);
+        destroy_tuple(tupleIn);
     }
     printf("Same tuples not inserted\n");
 
@@ -63,11 +67,13 @@ int main(int argc, const char *argv[]) {
         for(int j = 0; j <=i; j++ )
         {
             sprintf(string,"%d",j);
-            add_string_to_tuple(tupleIn, string);
+            add_string_to_pattern(pattern, string,EQUAL);
         }
         status = pop_tuple(tuplespace, pattern, &tupleOut);
         printf("Tuple poped:");
         print_pattern(tupleOut);
+        destroy_tuple(tupleOut);
+        destroy_patern(pattern);
     }
     printf("All tuples poped\n");
     destroy_patern(pattern);
