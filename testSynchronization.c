@@ -103,9 +103,9 @@ int main(int argc, const char *argv[]) {
         destroy_tuple(peeked);
     }
     printf("Consumer 2 peeked all tuples: ##########################################\n");
-    waitpid(pid[0],NULL,NULL);
-    waitpid(pid[1],NULL,NULL);
-    waitpid(pid[2],NULL,NULL);
+    waitpid(pid[0],NULL,0);
+    waitpid(pid[1],NULL,0);
+    waitpid(pid[2],NULL,0);
     free_host(handle);
     printf("Synchro test succes: \n");
     return 0;

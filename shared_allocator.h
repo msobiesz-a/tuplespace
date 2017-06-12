@@ -67,6 +67,9 @@ void free_host(int handle);
 int init_guest();
 void free_guest(int handle);
 
+void set_id(unsigned int id);
+unsigned int get_id();
+
 ptr_t get_tuplespace();
 
 #endif //UXP1A_SHARED_ALLOCATOR_H

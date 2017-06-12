@@ -19,6 +19,7 @@ static const int INITIAL_BUCKETS_COUNT = 32;
 
 static fixed_memory_t *fixedSharedMemory;
 static allocation_segment_t *mappedAllocationSegment;
+static unsigned int processId;
 
 int create_fixed_shared_memory()
 {
@@ -314,6 +315,7 @@ int init_host()
     initialize_tuple_space(tupleSpacePtr, INITIAL_BUCKETS_COUNT);
     set_start_pointer(tupleSpacePtr);
     set_remote_mem_ops(false);
+    processId = 0;
     return handle;
 }
 
@@ -329,6 +331,7 @@ int init_guest()
     int handle = read_handle_from_file("shmId");
     map_fixed_shared_memory(handle);
     set_remote_mem_ops(false);
+    processId = 0;
     return handle;
 }
 
@@ -340,4 +343,14 @@ void free_guest(int handle)
 ptr_t get_tuplespace()
 {
     return get_start_pointer();
+}
+
+void set_id(unsigned int id)
+{
+    processId = id;
+}
+
+unsigned int get_id()
+{
+    return processId;
 }

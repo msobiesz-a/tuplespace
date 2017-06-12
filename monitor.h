@@ -21,8 +21,12 @@ typedef union semun {
 
 typedef struct condition_variable_t
 {
-    int semId;
-    int waitingCount;
+    int condSemId;
+    int exclSemId;
+    int handSemId;
+    unsigned int waitingCount;
+    unsigned int waitIndex;
+    unsigned int wakeIndex;
 } condition_variable_t;
 
 typedef struct monitor_t
@@ -37,8 +41,6 @@ void release_semaphore(int semId);
 
 ptr_t create_condition_variable();
 void destroy_condition_variable(ptr_t condVarPtr);
-void wait_on_condition_variable(ptr_t condVarPtr);
-bool signal_condition_variable(ptr_t condVarPtr);
 
 ptr_t create_monitor();
 void destroy_monitor(ptr_t monitorPtr);
@@ -46,5 +48,6 @@ void enter_monitor(ptr_t monitorPtr);
 void leave_monitor(ptr_t monitorPtr);
 void wait_on_monitor_condition(ptr_t monitorPtr, ptr_t condVarPtr);
 void signal_monitor_condition(ptr_t monitorPtr, ptr_t condVarPtr);
+void broadcast_monitor_condition(ptr_t monitorPtr, ptr_t condVarPtr);
 
 #endif //UXP1A_MONITOR_H

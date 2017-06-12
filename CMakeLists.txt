@@ -24,6 +24,9 @@ set(SOURCE_FILES
 
 add_executable(host host.c ${SOURCE_FILES})
 add_executable(guest guest.c ${SOURCE_FILES})
+add_executable(guest1 guest1.c ${SOURCE_FILES})
+add_executable(guest2 guest2.c ${SOURCE_FILES})
+add_executable(guest3 guest3.c ${SOURCE_FILES})
 add_executable(testInteger testInt.c ${SOURCE_FILES})
 add_executable(testString testString.c ${SOURCE_FILES})
 add_executable(testSynchronization testSynchronization.c ${SOURCE_FILES})

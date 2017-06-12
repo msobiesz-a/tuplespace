@@ -37,11 +37,11 @@ int put_into_hash_table(ptr_t hashTablePtr, const ptr_t tuplePtr) {
     ptr_t bucket = (ptr_t) hash_tuple(tuplePtr) % hashTable->bucketsCount;
 
     if((status = insert_into_list_after(hashTable->bucketsPtr + (bucket * sizeof(list_t)), 0, tuplePtr)) == 0) {
-        hash_table_t *hashTable = deref_ptr(hashTablePtr);
+        hashTable = deref_ptr(hashTablePtr);
         ++hashTable->size;
         list_t *list = deref_ptr(hashTable->bucketsPtr + (bucket * sizeof(list_t)));
-        signal_monitor_condition(list->monitor,list->condition);
         leave_monitor(list->monitor);
+        broadcast_monitor_condition(list->monitor,list->condition);
     }
     return status;
 }
